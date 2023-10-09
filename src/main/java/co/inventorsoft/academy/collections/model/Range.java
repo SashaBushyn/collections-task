@@ -1,14 +1,15 @@
 package co.inventorsoft.academy.collections.model;
 
+import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.function.Function;
 
-public class Range<T extends Comparable> implements Set<T> {
-  private final   T start;
+public class Range<T extends Comparable<T>> implements Set<T> {
+  private final T start;
   private final T end;
-  private Function<T, T> incrementFunction;
+  private final Function<T, T> incrementFunction;
 
   private Range(T start, T end, Function<T, T> incrementFunction) {
     this.start = start;
@@ -17,15 +18,12 @@ public class Range<T extends Comparable> implements Set<T> {
   }
 
   public int size() {
-    double precision = 0.1;
-    if (start instanceof Double ) {
-      return (int) Math.ceil((((Number) end).floatValue() - ((Number) start).floatValue()) / precision);
+    if (start instanceof Double) {
+      return (int) Double.parseDouble(roundToOneDecimalPlace((((Double) end - (Double) start) / 0.1) + 1));
     } else if (start instanceof Float) {
-      return (int) Math.ceil((((Number) end).floatValue() - ((Number) start).floatValue()) / precision);
-    }
-    {
-      return (int) Math.ceil((((Number) end).intValue() - ((Number) start).intValue())+1);
-
+      return (int) Float.parseFloat(roundToOneDecimalPlace((((Float) end - (Float) start) / 0.1f) + 1));
+    } else {
+      return (int) (Integer) end - (Integer) start + 1;
     }
   }
 
@@ -39,7 +37,7 @@ public class Range<T extends Comparable> implements Set<T> {
   }
 
   public Iterator<T> iterator() {
-    return new Iterator<T>() {
+    return new Iterator<>() {
       private T current = start;
 
       @Override
@@ -97,13 +95,16 @@ public class Range<T extends Comparable> implements Set<T> {
   }
 
   public static Range<Double> of(Double start, Double end) {
-    return of(Math.round(start * 10.0) / 10.0,
-        Math.round(end * 10.0) / 10.0, aDouble -> aDouble + 0.1);
+    return Range.of(Double.parseDouble(roundToOneDecimalPlace(start)),
+        Double.parseDouble(roundToOneDecimalPlace(end)),
+        aDouble -> Double.parseDouble(roundToOneDecimalPlace(aDouble + 0.1)));
+
   }
 
   public static Range<Float> of(Float start, Float end) {
-    return of(Math.round(start * 10.0f) / 10.0f,
-        Math.round(end * 10.0f) / 10.0f, aFloat -> aFloat + 0.1f);
+    return of(Float.parseFloat(roundToOneDecimalPlace(start)),
+        Float.parseFloat(roundToOneDecimalPlace(end)),
+        aFloat -> Float.parseFloat(roundToOneDecimalPlace(aFloat + 0.1f)));
   }
 
   public static Range<Short> of(Short start, Short end) {
@@ -114,7 +115,12 @@ public class Range<T extends Comparable> implements Set<T> {
     return of(start, end, aByte -> (byte) (aByte + 1));
   }
 
-  public static <T extends Comparable> Range<T> of(T start, T end, Function<T, T> increment) {
-    return new Range<>(start,end, increment);
+  public static <T extends Comparable<T>> Range<T> of(T start, T end, Function<T, T> increment) {
+    return new Range<>(start, end, increment);
+  }
+
+  private static String roundToOneDecimalPlace(Number number) {
+    DecimalFormat df = new DecimalFormat("#.#");
+    return df.format(number).replace(",", ".");
   }
 }
